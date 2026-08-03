@@ -1,0 +1,9 @@
+{
+  "id": "nextjs",
+  "name": "React / Next.js",
+  "description": "Next.js 15, App Router.",
+  "envPath": ".env.local",
+  "sdkFile": "app/memberstack.js",
+  "envVar": "NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}

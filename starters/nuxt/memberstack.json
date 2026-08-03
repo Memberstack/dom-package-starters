@@ -1,0 +1,9 @@
+{
+  "id": "nuxt",
+  "name": "Vue / Nuxt",
+  "description": "Nuxt 3, Vue 3.",
+  "envPath": ".env",
+  "sdkFile": "plugins/memberstack.client.js",
+  "envVar": "NUXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}

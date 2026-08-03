@@ -1,0 +1,9 @@
+{
+  "id": "astro",
+  "name": "Astro",
+  "description": "Astro 5, one auth island.",
+  "envPath": ".env.local",
+  "sdkFile": "src/components/memberstack.js",
+  "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}

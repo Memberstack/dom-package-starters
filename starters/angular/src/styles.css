@@ -1,0 +1,514 @@
+/*
+ * Plain CSS on purpose. Swapping in Tailwind, CSS modules, or your own design
+ * system should be a deletion, not an untangling.
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --ink: #14171a;
+  --muted: #5f6771;
+  --line: #e7e5e0;
+  --accent: #0f5c46;
+  --accent-hover: #0c4a38;
+  --accent-ink: #ffffff;
+  --accent-soft: #e9f2ee;
+  --danger: #a8321f;
+  --danger-soft: #fdf0ed;
+  --radius: 14px;
+
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Footer sits at the bottom of the viewport on short pages instead of
+   floating in the middle of an empty screen. */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(1200px 500px at 82% -8%, #eaf3ef 0%, rgba(234, 243, 239, 0) 62%),
+    var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+}
+
+/* ── nav ─────────────────────────────────────────────── */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 20px 28px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Plain nav links. Scoped with :not(.btn) so it cannot bleed onto a link that
+   is styled as a button — that collision is what made "Sign up" render dark
+   green on dark green. */
+.nav-links a:not(.btn) {
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav-links a:not(.btn):hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nav-links a:not(.btn).active {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ── type ────────────────────────────────────────────── */
+
+h1 {
+  margin: 0 0 14px;
+  font-size: clamp(32px, 4.4vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.012em;
+  font-weight: 650;
+}
+
+.sub {
+  margin: 0 0 28px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 18px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ── hero ────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  gap: 48px;
+  align-items: center;
+  grid-template-columns: 1fr;
+  padding: 28px 0 20px;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 64px;
+  }
+}
+
+.hero-copy {
+  max-width: 560px;
+}
+
+.hero-copy > p {
+  color: var(--muted);
+  font-size: 17px;
+  margin: 0 0 26px;
+}
+
+.checks {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  display: grid;
+  gap: 11px;
+}
+
+.checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.checks svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+/* The locked-preview stack. It exists to make the gating idea visible on the
+   public page: this is what you get once you are in. */
+.preview {
+  position: relative;
+  display: grid;
+  gap: 12px;
+}
+
+.preview .card {
+  padding: 18px 20px;
+}
+
+.preview .card:nth-child(2) {
+  transform: translateX(14px);
+}
+
+.preview .card:nth-child(3) {
+  transform: translateX(28px);
+}
+
+.preview .locked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── cards ───────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 700px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(20, 23, 26, 0.04);
+}
+
+.card .kind {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card > p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+/* ── auth ────────────────────────────────────────────── */
+
+.auth {
+  max-width: 400px;
+  margin: 8px auto 0;
+}
+
+.auth h1 {
+  font-size: 27px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ── buttons ─────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-primary,
+a.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-sm {
+  width: auto;
+  padding: 8px 16px;
+}
+
+.btn-lg {
+  width: auto;
+  padding: 13px 22px;
+  font-size: 15px;
+}
+
+.btn-google {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn-google:hover {
+  background: #f6f5f2;
+}
+
+.btn-ghost {
+  width: auto;
+  padding: 7px 12px;
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+.btn-ghost:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.or::before,
+.or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.alt {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.alt a,
+.linkish {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  width: auto;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.alt a:hover,
+.linkish:hover {
+  text-decoration: underline;
+}
+
+/* ── messages ────────────────────────────────────────── */
+
+.err,
+.ok {
+  margin: 0 0 16px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-size: 13.5px;
+}
+
+.err {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ok {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.notice {
+  max-width: 440px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+/* ── definition list ─────────────────────────────────── */
+
+.dl {
+  margin: 16px 0 0;
+  display: grid;
+  gap: 0;
+}
+
+.dl div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  font-size: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dl div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.dl dt {
+  color: var(--muted);
+  flex: none;
+}
+
+.dl dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  /* Member IDs are long and unbreakable at word boundaries. */
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── footer ──────────────────────────────────────────── */
+
+.foot {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 22px 28px 34px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.foot span {
+  display: block;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
+code {
+  font-size: 12.5px;
+  background: #f0eeea;
+  padding: 2px 6px;
+  border-radius: 5px;
+}

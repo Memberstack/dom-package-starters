@@ -1,0 +1,28 @@
+# This file is for THIS repo. Each starter ships its own .gitignore for the
+# customer — do not fold these rules into those.
+
+# Left behind by running a starter locally to test it. The starters ship as
+# source; the customer's package manager writes its own lockfile on install,
+# and build-dist.mjs excludes these from the bundles too.
+starters/*/node_modules/
+starters/*/package-lock.json
+starters/*/yarn.lock
+starters/*/pnpm-lock.yaml
+starters/*/.next/
+starters/*/.nuxt/
+starters/*/.output/
+starters/*/.svelte-kit/
+starters/*/.angular/
+starters/*/.astro/
+starters/*/dist/
+starters/*/build/
+
+.DS_Store
+
+# This repo's own dependencies (Playwright, for the smoke test). The rule
+# above only covers the starters' node_modules, not the root's.
+/node_modules/
+
+# Playwright smoke-test output
+/test-results/
+/playwright-report/

@@ -1,0 +1,17 @@
+node_modules
+.astro
+dist
+build
+.next
+.nuxt
+.output
+.svelte-kit
+.angular
+.cache
+
+# Every env file, not just two names. Vite/Next also load
+# .env.production and .env.production.local, and a live key or an
+# sk_ secret in one of those would otherwise be committed.
+.env
+.env.*
+!.env.example

@@ -1,0 +1,215 @@
+# CI for the starters.
+#
+# This repo is unusual: the dashboard reads it over raw.githubusercontent.com
+# with a ~5 minute cache and NO deploy step, so there is no release to gate.
+#
+# WHAT CUSTOMERS SEE IS THE `live` TAG, NOT `main` -- see the `live` job at the
+# bottom. Push to main as freely as you like; the tag only moves once every
+# check below has passed, so a broken commit sits on main and reaches nobody.
+# That is the whole safety model, and it is why nothing here requires a pull
+# request or a second branch.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # The guards that stop a broken bundle shipping: no placeholder, a committed
+  # real key, metadata pointing at files that do not exist, build output leaking
+  # into the download.
+  generator:
+    name: Generator tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+
+      # Fails if a starter was edited without regenerating dist/. Without this,
+      # an edit ships behind the old bundle and the repo looks correct while
+      # customers download something else.
+      - name: dist is not stale
+        run: npm run check
+
+  # Every starter must still produce a production build. This is what catches a
+  # broken import or a framework-specific mistake before a customer meets it.
+  build:
+    name: Build ${{ matrix.starter }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        starter: [nextjs, nuxt, sveltekit, remix, astro, angular]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        working-directory: starters/${{ matrix.starter }}
+        run: npm install --no-audit --no-fund
+
+      # A syntactically valid key, so the build behaves as it would for a real
+      # customer. It authenticates nothing — no requests are made during a build.
+      - name: Build
+        working-directory: starters/${{ matrix.starter }}
+        env:
+          NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY: pk_sb_0000000000000000000a
+          NUXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY: pk_sb_0000000000000000000a
+          PUBLIC_MEMBERSTACK_PUBLIC_KEY: pk_sb_0000000000000000000a
+          VITE_MEMBERSTACK_PUBLIC_KEY: pk_sb_0000000000000000000a
+          NG_APP_MEMBERSTACK_PUBLIC_KEY: pk_sb_0000000000000000000a
+        run: npm run build
+
+      # A build must not scribble on the repo. Angular is the one legitimate
+      # exception: set-env.mjs writes the key into environment.ts, which is
+      # tracked, so that single file is allowed to change and nothing else is.
+      #
+      # This is a containment check, not a leak check — the leak is already
+      # covered, because build-dist refuses to bundle anything matching a real
+      # key, and the CI key above matches that pattern deliberately.
+      # Angular's set-env.mjs writes the key into EVERY environment file, not
+      # just environment.ts: `ng build` reads environment.ts and `ng serve`
+      # reads environment.development.ts, and writing only the first left the
+      # dev server authenticating with the literal placeholder. So the
+      # allowlist is the environments directory rather than one filename.
+      #
+      # Anything outside it still fails. This is a containment check, not a
+      # leak check — the leak is already covered, because build-dist refuses to
+      # bundle anything matching a real key and the CI key above matches that
+      # pattern deliberately.
+      - name: Build changed nothing it should not have
+        run: |
+          changed=$(git diff --name-only)
+          if [ -z "$changed" ]; then exit 0; fi
+          unexpected=$(printf '%s\n' "$changed" \
+            | grep -vE '^starters/angular/src/environments/[^/]+\.ts$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "A build modified tracked files it should not have:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+  # The check the jobs above cannot make: does the starter actually WORK.
+  #
+  # A build proves imports resolve. It does not prove signup reaches
+  # Memberstack, that a custom field survives the round trip, that the session
+  # outlives a refresh, or that the members page is gated. Angular's zone.js
+  # polyfill is the standing example: without it, install, build and serve all
+  # succeed and the browser renders an empty page.
+  smoke:
+    name: Smoke ${{ matrix.starter }}
+    runs-on: ubuntu-latest
+    # One run per starter at a time. The test signs up a FIXED address per
+    # starter (see smoke/starters.mjs for why), so two runs of the same starter
+    # would delete each other's member mid-flight.
+    concurrency:
+      group: smoke-${{ matrix.starter }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        starter: [nextjs, nuxt, sveltekit, remix, astro, angular]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # GitHub withholds secrets from pull requests opened out of a fork, so
+      # this job CANNOT run there. Skipped rather than failed: an outside
+      # contributor should not see a red X they have no way to fix, on a check
+      # that is about our credentials rather than their change.
+      - name: Is the sandbox key available?
+        id: key
+        env:
+          MEMBERSTACK_PUBLIC_KEY: ${{ secrets.MEMBERSTACK_SMOKE_PUBLIC_KEY }}
+        run: |
+          if [ -n "$MEMBERSTACK_PUBLIC_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No sandbox key available (expected on fork PRs). Skipping the browser smoke test."
+          fi
+
+      - name: Install the repo
+        if: steps.key.outputs.available == 'true'
+        run: npm install --no-audit --no-fund
+
+      - name: Install the starter
+        if: steps.key.outputs.available == 'true'
+        working-directory: starters/${{ matrix.starter }}
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        if: steps.key.outputs.available == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke
+        if: steps.key.outputs.available == 'true'
+        env:
+          STARTER: ${{ matrix.starter }}
+          MEMBERSTACK_PUBLIC_KEY: ${{ secrets.MEMBERSTACK_SMOKE_PUBLIC_KEY }}
+        run: npm run smoke
+
+      - name: Upload the trace when it fails
+        if: failure() && steps.key.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-trace-${{ matrix.starter }}
+          path: test-results/
+          retention-days: 7
+
+  # The only thing customers ever see.
+  #
+  # The dashboard reads `refs/tags/live`, not `main`. This moves that tag to the
+  # commit that just passed everything above, which means a red commit stays on
+  # main and reaches nobody -- no pull request, no review gate, no second
+  # branch. `39545d09` is why this exists: it landed on main with failing CI and
+  # was fixed by the next commit, and for the minutes in between it was what the
+  # CDN was serving.
+  #
+  # `needs` is the gate. If any job above fails OR is skipped, GitHub skips this
+  # one and the tag simply does not move.
+  live:
+    name: Publish to the dashboard
+    needs: [generator, build, smoke]
+    # Never on a pull request: a branch that is not main must not become what
+    # customers download, however green it is.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # The smoke job's STEPS skip when the sandbox key is missing (fork PRs),
+      # and a job whose steps all skip still reports success. On main the secret
+      # is always available, so its absence means the gate has quietly stopped
+      # testing anything -- publish nothing and say so loudly.
+      - name: Refuse to publish untested code
+        env:
+          MEMBERSTACK_PUBLIC_KEY: ${{ secrets.MEMBERSTACK_SMOKE_PUBLIC_KEY }}
+        run: |
+          if [ -z "$MEMBERSTACK_PUBLIC_KEY" ]; then
+            echo "::error::MEMBERSTACK_SMOKE_PUBLIC_KEY is missing, so the browser smoke test did not run. Not moving the live tag."
+            exit 1
+          fi
+
+      - name: Move `live` to this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          if gh api "repos/$REPO/git/refs/tags/live" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/tags/live" \
+              -f sha="$SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/$REPO/git/refs" \
+              -f ref="refs/tags/live" -f sha="$SHA" >/dev/null
+          fi
+          echo "::notice::live -> $SHA. The dashboard serves this within ~5 minutes."

@@ -1,0 +1,9 @@
+{
+  "id": "remix",
+  "name": "Remix",
+  "description": "Remix 2 on Vite, React.",
+  "envPath": ".env.local",
+  "sdkFile": "app/memberstack.js",
+  "envVar": "VITE_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}

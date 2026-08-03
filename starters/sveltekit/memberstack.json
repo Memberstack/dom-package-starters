@@ -1,0 +1,9 @@
+{
+  "id": "sveltekit",
+  "name": "Svelte / SvelteKit",
+  "description": "SvelteKit 2, Svelte 5 runes.",
+  "envPath": ".env.local",
+  "sdkFile": "src/lib/memberstack.js",
+  "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dom-package-starters",
+  "private": true,
+  "type": "module",
+  "description": "Memberstack starter projects, served to the dashboard over raw content.",
+  "scripts": {
+    "build": "node scripts/build-dist.mjs",
+    "check": "node scripts/build-dist.mjs --check",
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "smoke": "playwright test --config smoke/playwright.config.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0"
+  }
+}

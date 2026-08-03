@@ -1,0 +1,34 @@
+---
+import Nav from "../components/Nav.jsx";
+import { site } from "../site.config";
+import "../styles/style.css";
+
+const { pathname } = Astro.url;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{site.name}</title>
+    <meta name="description" content={site.tagline} />
+  </head>
+  <body>
+    <header class="nav">
+      <a href="/" class="brand">{site.name}</a>
+      <!-- The only island in the shell. Everything else here is static HTML. -->
+      <Nav client:load pathname={pathname} />
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="foot">
+      <span>
+        {site.name} is a Memberstack starter. Replace <code>site.config.js</code>
+        with your own and this becomes your site.
+      </span>
+    </footer>
+  </body>
+</html>

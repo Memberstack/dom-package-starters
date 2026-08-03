@@ -1,0 +1,9 @@
+{
+  "id": "angular",
+  "name": "Angular",
+  "description": "Angular 19, standalone APIs.",
+  "envPath": "src/environments/environment.ts",
+  "sdkFile": "src/app/memberstack.ts",
+  "envVar": "NG_APP_MEMBERSTACK_PUBLIC_KEY",
+  "deployable": true
+}
