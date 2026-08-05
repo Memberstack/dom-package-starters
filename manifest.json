@@ -3,30 +3,6 @@
   "keyPlaceholder": "__MEMBERSTACK_PUBLIC_KEY__",
   "starters": [
     {
-      "id": "angular",
-      "name": "Angular",
-      "description": "Angular 19, standalone APIs.",
-      "envPath": "src/environments/environment.ts",
-      "envVar": "NG_APP_MEMBERSTACK_PUBLIC_KEY",
-      "sdkFile": "src/app/memberstack.ts",
-      "deployable": true,
-      "bundle": "dist/angular.json",
-      "fileCount": 25,
-      "bytes": 51236
-    },
-    {
-      "id": "astro",
-      "name": "Astro",
-      "description": "Astro 5, one auth island.",
-      "envPath": ".env.local",
-      "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
-      "sdkFile": "src/components/memberstack.js",
-      "deployable": true,
-      "bundle": "dist/astro.json",
-      "fileCount": 21,
-      "bytes": 42873
-    },
-    {
       "id": "nextjs",
       "name": "React / Next.js",
       "description": "Next.js 15, App Router.",
@@ -37,6 +13,18 @@
       "bundle": "dist/nextjs.json",
       "fileCount": 18,
       "bytes": 42058
+    },
+    {
+      "id": "sveltekit",
+      "name": "Svelte / SvelteKit",
+      "description": "SvelteKit 2, Svelte 5 runes.",
+      "envPath": ".env.local",
+      "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+      "sdkFile": "src/lib/memberstack.js",
+      "deployable": true,
+      "bundle": "dist/sveltekit.json",
+      "fileCount": 19,
+      "bytes": 37182
     },
     {
       "id": "nuxt",
@@ -51,6 +39,18 @@
       "bytes": 40350
     },
     {
+      "id": "astro",
+      "name": "Astro",
+      "description": "Astro 5, one auth island.",
+      "envPath": ".env.local",
+      "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
+      "sdkFile": "src/components/memberstack.js",
+      "deployable": true,
+      "bundle": "dist/astro.json",
+      "fileCount": 21,
+      "bytes": 42873
+    },
+    {
       "id": "remix",
       "name": "Remix",
       "description": "Remix 2 on Vite, React.",
@@ -63,16 +63,16 @@
       "bytes": 42524
     },
     {
-      "id": "sveltekit",
-      "name": "Svelte / SvelteKit",
-      "description": "SvelteKit 2, Svelte 5 runes.",
-      "envPath": ".env.local",
-      "envVar": "PUBLIC_MEMBERSTACK_PUBLIC_KEY",
-      "sdkFile": "src/lib/memberstack.js",
+      "id": "angular",
+      "name": "Angular",
+      "description": "Angular 19, standalone APIs.",
+      "envPath": "src/environments/environment.ts",
+      "envVar": "NG_APP_MEMBERSTACK_PUBLIC_KEY",
+      "sdkFile": "src/app/memberstack.ts",
       "deployable": true,
-      "bundle": "dist/sveltekit.json",
-      "fileCount": 19,
-      "bytes": 37182
+      "bundle": "dist/angular.json",
+      "fileCount": 25,
+      "bytes": 51236
     }
   ]
 }

@@ -52,6 +52,44 @@ const SKIP_FILES = new Set([
 /** Metadata lives with the starter, not in this script. */
 const META_FILE = "memberstack.json";
 
+/**
+ * THE ORDER THE DASHBOARD SHOWS THESE IN, and the only place it is decided.
+ *
+ * The dashboard renders `manifest.starters` as it finds it and does not sort,
+ * so this array IS the on-screen order. It used to be `readdirSync().sort()`,
+ * which is alphabetical by folder name and a decision nobody made: it put
+ * Angular first, the one framework Memberstack does not even offer in its
+ * signup picker, above React/Next.js.
+ *
+ * The order is demand, from the "what are you building with?" answers on app
+ * creation over 90 days: React/Next.js 14 apps, Svelte/SvelteKit 2, Vue/Nuxt 1,
+ * Astro 1. Remix and Angular are not options in that picker, so they have no
+ * signal and go last rather than nowhere -- an absent option cannot be chosen,
+ * and reading its zero as disinterest would be a mistake.
+ *
+ * A starter missing from this list still ships, appended alphabetically after
+ * the named ones, so adding a starter cannot silently drop it from the
+ * dashboard. `build-dist.test.mjs` pins the resulting order.
+ */
+const DISPLAY_ORDER = [
+  "nextjs",
+  "sveltekit",
+  "nuxt",
+  "astro",
+  "remix",
+  "angular",
+];
+
+const byDisplayOrder = (a, b) => {
+  const ia = DISPLAY_ORDER.indexOf(a);
+  const ib = DISPLAY_ORDER.indexOf(b);
+  // Unlisted starters sort after every listed one, then alphabetically.
+  if (ia === -1 && ib === -1) return a.localeCompare(b);
+  if (ia === -1) return 1;
+  if (ib === -1) return -1;
+  return ia - ib;
+};
+
 const walk = (dir, base = dir) => {
   const out = [];
   for (const entry of readdirSync(dir).sort()) {
@@ -84,107 +122,112 @@ export const build = ({
   outDir = ROOT,
   check = false,
 } = {}) => {
-const problems = [];
-const entries = [];
-const bundles = new Map();
+  const problems = [];
+  const entries = [];
+  const bundles = new Map();
 
-for (const id of readdirSync(startersDir).sort()) {
-  const dir = join(startersDir, id);
-  if (!statSync(dir).isDirectory()) continue;
+  for (const id of readdirSync(startersDir).sort(byDisplayOrder)) {
+    const dir = join(startersDir, id);
+    if (!statSync(dir).isDirectory()) continue;
 
-  let meta;
-  try {
-    meta = JSON.parse(readFileSync(join(dir, META_FILE), "utf8"));
-  } catch {
-    problems.push(`starters/${id}/${META_FILE} is missing or unreadable`);
-    continue;
-  }
-
-  const paths = walk(dir);
-  const files = paths.map((path) => ({
-    path,
-    content: readFileSync(join(dir, path), "utf8"),
-  }));
-
-  // The whole delivery mechanism depends on the dashboard finding this token
-  // and swapping the customer's key in. A starter without it downloads as a
-  // project that installs, builds, runs, and rejects every call.
-  if (!files.some((f) => f.content.includes(KEY_PLACEHOLDER))) {
-    problems.push(`starters/${id} contains no ${KEY_PLACEHOLDER}`);
-  }
-  // A real key committed by accident would be published to every customer.
-  const leaked = files.find((f) => /\bpk_(sb_)?[a-f0-9]{20}\b/.test(f.content));
-  if (leaked) {
-    problems.push(
-      `starters/${id}/${leaked.path} looks like it contains a REAL Memberstack key`
-    );
-  }
-  if (!paths.includes(meta.envPath)) {
-    problems.push(`starters/${id}: envPath "${meta.envPath}" does not exist`);
-  }
-  if (meta.sdkFile && !paths.includes(meta.sdkFile)) {
-    problems.push(`starters/${id}: sdkFile "${meta.sdkFile}" does not exist`);
-  }
-  // The declared env var must actually appear in the starter. This is the guard
-  // for a bug that already shipped once: a Remix page told customers to set
-  // NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY, which Remix does not read. The name is
-  // now declared once in memberstack.json and consumed by the deploy button, so
-  // a mismatch here would send every deployer to a variable nothing reads.
-  if (!meta.envVar) {
-    problems.push(`starters/${id}: memberstack.json has no envVar`);
-  } else if (!files.some((f) => f.content.includes(meta.envVar))) {
-    problems.push(
-      `starters/${id}: declares envVar "${meta.envVar}" but no file mentions it`
-    );
-  }
-
-  bundles.set(id, { id, files });
-  entries.push({
-    id: meta.id ?? id,
-    name: meta.name,
-    description: meta.description,
-    envPath: meta.envPath,
-    envVar: meta.envVar,
-    sdkFile: meta.sdkFile ?? null,
-    // Whether this starter can be one-click deployed. Angular needs a build
-    // script to turn an env var into its committed environment.ts; everything
-    // else reads one natively.
-    deployable: meta.deployable !== false,
-    bundle: `dist/${id}.json`,
-    fileCount: files.length,
-    bytes: files.reduce((n, f) => n + Buffer.byteLength(f.content, "utf8"), 0),
-  });
-}
-
-const manifest = {
-  schemaVersion: SCHEMA_VERSION,
-  keyPlaceholder: KEY_PLACEHOLDER,
-  starters: entries,
-};
-
-const targets = [
-  [join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`],
-  ...[...bundles].map(([id, bundle]) => [
-    join(outDir, "dist", `${id}.json`),
-    `${JSON.stringify(bundle, null, 2)}\n`,
-  ]),
-];
-
-for (const [file, content] of targets) {
-  if (check) {
-    let current = null;
+    let meta;
     try {
-      current = readFileSync(file, "utf8");
-    } catch {}
-    if (current !== content) {
+      meta = JSON.parse(readFileSync(join(dir, META_FILE), "utf8"));
+    } catch {
+      problems.push(`starters/${id}/${META_FILE} is missing or unreadable`);
+      continue;
+    }
+
+    const paths = walk(dir);
+    const files = paths.map((path) => ({
+      path,
+      content: readFileSync(join(dir, path), "utf8"),
+    }));
+
+    // The whole delivery mechanism depends on the dashboard finding this token
+    // and swapping the customer's key in. A starter without it downloads as a
+    // project that installs, builds, runs, and rejects every call.
+    if (!files.some((f) => f.content.includes(KEY_PLACEHOLDER))) {
+      problems.push(`starters/${id} contains no ${KEY_PLACEHOLDER}`);
+    }
+    // A real key committed by accident would be published to every customer.
+    const leaked = files.find((f) =>
+      /\bpk_(sb_)?[a-f0-9]{20}\b/.test(f.content)
+    );
+    if (leaked) {
       problems.push(
-        `${relative(outDir, file)} is stale — run node scripts/build-dist.mjs`
+        `starters/${id}/${leaked.path} looks like it contains a REAL Memberstack key`
       );
     }
-  } else {
-    writeFileSync(file, content);
+    if (!paths.includes(meta.envPath)) {
+      problems.push(`starters/${id}: envPath "${meta.envPath}" does not exist`);
+    }
+    if (meta.sdkFile && !paths.includes(meta.sdkFile)) {
+      problems.push(`starters/${id}: sdkFile "${meta.sdkFile}" does not exist`);
+    }
+    // The declared env var must actually appear in the starter. This is the guard
+    // for a bug that already shipped once: a Remix page told customers to set
+    // NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY, which Remix does not read. The name is
+    // now declared once in memberstack.json and consumed by the deploy button, so
+    // a mismatch here would send every deployer to a variable nothing reads.
+    if (!meta.envVar) {
+      problems.push(`starters/${id}: memberstack.json has no envVar`);
+    } else if (!files.some((f) => f.content.includes(meta.envVar))) {
+      problems.push(
+        `starters/${id}: declares envVar "${meta.envVar}" but no file mentions it`
+      );
+    }
+
+    bundles.set(id, { id, files });
+    entries.push({
+      id: meta.id ?? id,
+      name: meta.name,
+      description: meta.description,
+      envPath: meta.envPath,
+      envVar: meta.envVar,
+      sdkFile: meta.sdkFile ?? null,
+      // Whether this starter can be one-click deployed. Angular needs a build
+      // script to turn an env var into its committed environment.ts; everything
+      // else reads one natively.
+      deployable: meta.deployable !== false,
+      bundle: `dist/${id}.json`,
+      fileCount: files.length,
+      bytes: files.reduce(
+        (n, f) => n + Buffer.byteLength(f.content, "utf8"),
+        0
+      ),
+    });
   }
-}
+
+  const manifest = {
+    schemaVersion: SCHEMA_VERSION,
+    keyPlaceholder: KEY_PLACEHOLDER,
+    starters: entries,
+  };
+
+  const targets = [
+    [join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`],
+    ...[...bundles].map(([id, bundle]) => [
+      join(outDir, "dist", `${id}.json`),
+      `${JSON.stringify(bundle, null, 2)}\n`,
+    ]),
+  ];
+
+  for (const [file, content] of targets) {
+    if (check) {
+      let current = null;
+      try {
+        current = readFileSync(file, "utf8");
+      } catch {}
+      if (current !== content) {
+        problems.push(
+          `${relative(outDir, file)} is stale — run node scripts/build-dist.mjs`
+        );
+      }
+    } else {
+      writeFileSync(file, content);
+    }
+  }
 
   return { problems, entries, count: bundles.size };
 };

@@ -279,6 +279,49 @@ describe("build-dist: the manifest", () => {
     assert.equal(manifest.schemaVersion, 1);
   });
 
+  /**
+   * MANIFEST ORDER IS ON-SCREEN ORDER. The dashboard renders
+   * `manifest.starters` as it receives it and does not sort, so this array
+   * decides which template a customer sees first.
+   *
+   * Nothing pinned it before. The test above sorts both sides before comparing,
+   * which is right for "are they all here?" and blind to order -- so the
+   * alphabetical `readdirSync().sort()` that put Angular first, above
+   * React/Next.js, was never a decision anyone made or could have caught.
+   */
+  it("emits the starters in the dashboard's display order, not alphabetically", () => {
+    const root = makeRepo();
+    for (const id of ["angular", "nextjs", "sveltekit"]) addStarter(root, id);
+    build({ startersDir: join(root, "starters"), outDir: root });
+
+    const manifest = JSON.parse(
+      readFileSync(join(root, "manifest.json"), "utf8")
+    );
+
+    // "demo" is the fixture's own starter and is not in DISPLAY_ORDER, so it
+    // demonstrates the fallback in the same assertion: named ones first in
+    // their stated order, everything else after them, alphabetically.
+    assert.deepEqual(
+      manifest.starters.map((s) => s.id),
+      ["nextjs", "sveltekit", "angular", "demo"]
+    );
+  });
+
+  it("keeps shipping a starter that nobody put in the display order", () => {
+    // The failure this prevents is silent: an unlisted starter that sorted to
+    // the end of nothing would simply not reach the dashboard, and the person
+    // who added it would have no reason to look at this file.
+    const root = makeRepo();
+    addStarter(root, "zzz-brand-new");
+    build({ startersDir: join(root, "starters"), outDir: root });
+
+    const manifest = JSON.parse(
+      readFileSync(join(root, "manifest.json"), "utf8")
+    );
+
+    assert.ok(manifest.starters.some((s) => s.id === "zzz-brand-new"));
+  });
+
   it("reports byte counts that match the bundle it emitted", () => {
     // The dashboard shows these to the customer before they download.
     const root = makeRepo();
